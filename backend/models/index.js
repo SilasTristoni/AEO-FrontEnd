@@ -2,16 +2,16 @@
 
 const sequelize = require('../config/database');
 
-// 1. Importar todos os seus modelos
+// 1. Importar todos os modelos
 const User = require('./users');
 const Category = require('./categories');
 const Product = require('./products');
-const Order = require('./orders'); 
+const Order = require('./orders');
 const OrderProduct = require('./orderProduct');
 
-// 2. Montar um objeto 'db' que será nosso ponto central de acesso
+// 2. Montar o objeto 'db'
 const db = {
-  sequelize, // A instância da conexão
+  sequelize,
   User,
   Category,
   Product,
@@ -19,21 +19,18 @@ const db = {
   OrderProduct
 };
 
-// 3. Definir TODAS as associações usando o objeto 'db'
-//    Isto inclui a lógica do seu antigo arquivo 'association.js'
-
-// Associação: Categoria <-> Produto (Um-para-Muitos)
+// 3. Definir TODAS as associações
+// Associação: Categoria <-> Produto
 db.Category.hasMany(db.Product, { foreignKey: 'categoryId', as: 'products' });
 db.Product.belongsTo(db.Category, { foreignKey: 'categoryId', as: 'category' });
 
-// Associação: Pedido <-> Produto (Muitos-para-Muitos)
+// Associação: Pedido <-> Produto
 db.Order.belongsToMany(db.Product, {
-  through: db.OrderProduct, // A tabela de junção
+  through: db.OrderProduct,
   foreignKey: 'orderId',
   otherKey: 'productId',
   as: 'products'
 });
-
 db.Product.belongsToMany(db.Order, {
   through: db.OrderProduct,
   foreignKey: 'productId',
@@ -41,5 +38,9 @@ db.Product.belongsToMany(db.Order, {
   as: 'orders'
 });
 
-// 4. Exportar o objeto 'db' completo
-module.exports = db;
+// Associação: Usuário <-> Pedido
+db.User.hasMany(db.Order, { foreignKey: 'userId', as: 'orders' });
+db.Order.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
+
+// 4. Exportar o objeto 'db' corretamente
+module.exports = db; // <-- CORREÇÃO AQUI

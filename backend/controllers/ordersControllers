@@ -1,118 +1,88 @@
-const Orders = require('../models/orders');
-const Products = require('../models/products');
-const OrderProduct = require('../models/orderProduct');
+const { Order, Product, User, OrderProduct } = require('../models');
+const asyncHandler = require('express-async-handler');
 
-class OrdersControllers {
-    static async findAllOrders(req, res) {
-        try {
-            const orders = await Orders.findAll({
-                 include: [{ model: Products, as: 'products', through: { attributes: [] }}]
-            });
-            return res.status(200).json(orders);
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao buscar os pedidos', error: err.message });
-        }
+// @desc    Criar um novo pedido
+// @route   POST /orders
+// @access  Private
+exports.createOrder = asyncHandler(async (req, res) => {
+    // A requisição deve conter um array de produtos: [{ productId: 1, quantity: 2 }]
+    const { products } = req.body;
+    const userId = req.user.id; // Pega o ID do usuário logado a partir do token (middleware)
+
+    if (!products || !Array.isArray(products) || products.length === 0) {
+        res.status(400);
+        throw new Error('Uma lista de produtos é obrigatória para criar um pedido.');
     }
 
-    static async findOrderById(req, res) {
-        try {
-            const { id } = req.params;
-            const order = await Orders.findByPk(id, {
-                include: [{ model: Products, as: 'products', through: { attributes: ['quantity'] }}]
-            });
-            if (!order) {
-                return res.status(404).json({ message: 'Id não encontrado' });
-            }
-            return res.status(200).json(order);
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao buscar o pedido', error: err.message });
-        }
+    // Cria o pedido associado ao usuário logado
+    const newOrder = await Order.create({ userId });
+
+    // Adiciona cada produto ao pedido com sua respectiva quantidade
+    for (const product of products) {
+        await newOrder.addProduct(product.productId, {
+            through: { quantity: product.quantity }
+        });
     }
 
-    static async createOrder(req, res) {
-        try {
-            // products deve ser um array de objetos: [{productId: 1, quantity: 2}, {productId: 3, quantity: 1}]
-            const { userId, products } = req.body;
-            if(!userId || !products || !Array.isArray(products) || products.length === 0){
-                 return res.status(400).json({ message: 'userId e uma lista de produtos são obrigatórios.' });
-            }
+    // Busca o pedido recém-criado com todos os seus produtos para retornar ao cliente
+    const result = await Order.findByPk(newOrder.id, {
+        include: [{
+            model: Product,
+            as: 'products',
+            attributes: ['id', 'name', 'price'],
+            through: { attributes: ['quantity'] }
+        }]
+    });
 
-            const newOrder = await Orders.create({ userId });
+    res.status(201).json(result);
+});
 
-            for (const product of products) {
-                await newOrder.addProduct(product.productId, { through: { quantity: product.quantity } });
-            }
 
-            const result = await Orders.findByPk(newOrder.id, {
-                include: [{ model: Products, as: 'products', through: { attributes: ['quantity'] }}]
-            });
+// @desc    Obter os pedidos do usuário logado
+// @route   GET /orders/myorders
+// @access  Private
+exports.getMyOrders = asyncHandler(async (req, res) => {
+    const userId = req.user.id; // ID do usuário do token
 
-            return res.status(201).json(result);
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao criar o pedido', error: err.message });
-        }
+    const orders = await Order.findAll({
+        where: { userId },
+        include: [{
+            model: Product,
+            as: 'products',
+            attributes: ['id', 'name', 'price'],
+            through: { attributes: ['quantity'] }
+        }],
+        order: [['createdAt', 'DESC']] // Ordena pelos mais recentes
+    });
+
+    res.status(200).json(orders);
+});
+
+
+// @desc    Obter um pedido específico pelo ID
+// @route   GET /orders/:id
+// @access  Private (um admin poderia ver qualquer pedido, mas aqui vamos assumir que o usuário só pode ver os seus)
+exports.getOrderById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const order = await Order.findOne({
+        where: { id, userId }, // Garante que o usuário só possa ver seu próprio pedido
+        include: [{
+            model: Product,
+            as: 'products',
+            through: { attributes: ['quantity'] }
+        }]
+    });
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Pedido não encontrado ou não pertence a este usuário.');
     }
 
-    static async updateOrder(req, res) {
-        // Esta função pode ser complexa. Uma abordagem simples seria deletar e recriar as associações.
-        try {
-            const { id } = req.params;
-            const { userId, products } = req.body; // products: [{productId: 1, quantity: 2}]
-            
-            const order = await Orders.findByPk(id);
-            if (!order) {
-                return res.status(404).json({ message: 'Pedido não encontrado' });
-            }
+    res.status(200).json(order);
+});
 
-            if (userId) order.userId = userId;
-
-            if(products && Array.isArray(products)) {
-                await OrderProduct.destroy({ where: { orderId: id }}); // Remove associações antigas
-                for (const product of products) {
-                    await order.addProduct(product.productId, { through: { quantity: product.quantity } });
-                }
-            }
-            
-            await order.save();
-            
-             const result = await Orders.findByPk(id, {
-                include: [{ model: Products, as: 'products', through: { attributes: ['quantity'] }}]
-            });
-            
-            return res.status(200).json(result);
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao atualizar o pedido', error: err.message });
-        }
-    }
-
-    static async deleteOrder(req, res) {
-        try {
-            const { id } = req.params;
-            const order = await Orders.findByPk(id);
-            if (!order) {
-                return res.status(404).json({ message: 'Pedido não encontrado' });
-            }
-            await order.destroy();
-            return res.status(204).send();
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao deletar o pedido', error: err.message });
-        }
-    }
-    
-    static async findOrdersByUserId(req, res) {
-        try {
-            const { id } = req.params; // id do usuário
-            const orders = await Orders.findAll({
-                where: { userId: id },
-                include: [{ model: Products, as: 'products', through: { attributes: ['quantity'] }}]
-            });
-            if (orders.length === 0) {
-                return res.status(404).json({ message: 'Nenhum pedido encontrado para este usuário' });
-            }
-            return res.status(200).json(orders);
-        } catch (err) {
-            return res.status(500).json({ message: 'Erro ao buscar os pedidos', error: err.message });
-        }
-    }
-}
-module.exports = OrdersControllers;
+// Nota: As funções de update e delete de pedidos podem ser bastante complexas
+// (cancelamento, estorno, etc.) e foram omitidas para simplificar,
+// mas podem ser adicionadas aqui seguindo o mesmo padrão.

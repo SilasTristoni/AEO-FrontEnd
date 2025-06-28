@@ -120,3 +120,156 @@ body {
 .container {
     padding: 2rem;
 }
+.page-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.page-container h1 {
+  color: #182848;
+  margin-bottom: 2rem;
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 0.75rem;
+}
+
+/* Formulário de Entidade (Categorias/Produtos) */
+.entity-form {
+  background-color: var(--form-background);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 3rem;
+}
+
+.entity-form h2 {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: #333;
+  text-align: left;
+}
+
+.entity-form .form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--input-border-color);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  background-color: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.entity-form .form-group select:focus {
+  outline: none;
+  border-color: var(--input-focus-color);
+  box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+}
+
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-actions .cancel-button {
+  background-color: #777;
+}
+.form-actions .cancel-button:hover {
+  background-color: #555;
+}
+
+/* Lista de Entidades (Categorias/Produtos) */
+.entity-list {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.entity-list h2 {
+  margin-top: 0;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Lista de Categorias (simples) */
+.entity-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.entity-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.entity-list li:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.entity-list li:hover {
+  background-color: #f0f4ff;
+}
+
+.entity-list .actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #4b6cb7;
+  color: white;
+}
+
+.actions .delete-button {
+  background-color: #e74c3c;
+}
+
+
+/* Lista de Produtos (em cards) */
+.item-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.item-card {
+  border: 1px solid #eee;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.item-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.item-card h4 {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  margin: 0;
+  border-bottom: 1px solid #eee;
+}
+
+.item-card p {
+  padding: 0 1rem;
+}
+
+.item-card .actions {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eee;
+  margin-top: 1rem;
+}

@@ -1,13 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const OrdersControllers = require('../controllers/ordersControllers');
+const {
+    createOrder,
+    getMyOrders,
+    getOrderById
+} = require('../controllers/ordersControllers');
 const authenticateToken = require('../middleware/authenticateToken');
 
-router.get('/', authenticateToken, OrdersControllers.findAllOrders);
-router.post('/', authenticateToken, OrdersControllers.createOrder);
-router.get('/user/:id', authenticateToken, OrdersControllers.findOrdersByUserId);
-router.get('/:id', authenticateToken, OrdersControllers.findOrderById);
-router.put('/:id', authenticateToken, OrdersControllers.updateOrder);
-router.delete('/:id', authenticateToken, OrdersControllers.deleteOrder);
+// O middleware de autenticação será aplicado a todas as rotas de pedidos
+router.use(authenticateToken);
+
+// Rota para criar um novo pedido
+// POST /orders
+router.post('/', createOrder);
+
+// Rota para buscar todos os pedidos do usuário logado
+// GET /orders/myorders
+router.get('/myorders', getMyOrders);
+
+// Rota para buscar um pedido específico do usuário pelo ID do pedido
+// GET /orders/:id
+router.get('/:id', getOrderById);
 
 module.exports = router;

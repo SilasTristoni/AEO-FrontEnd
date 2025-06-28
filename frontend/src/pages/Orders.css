@@ -1,0 +1,107 @@
+/* Container principal da página de pedidos */
+.orders-page {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.orders-page h1 {
+  color: #182848; /* Azul escuro do tema */
+  margin-bottom: 2rem;
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 0.75rem;
+  font-size: 2.5rem;
+}
+
+/* Estilo para a mensagem de 'carregando' */
+.loading-spinner {
+    text-align: center;
+    font-size: 1.5rem;
+    color: #555;
+    padding: 4rem 0;
+}
+
+/* Container da lista de pedidos */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Espaçamento entre os cards de pedido */
+}
+
+/* Card individual de cada pedido */
+.order-card {
+  background-color: #ffffff;
+  border-radius: var(--border-radius, 8px);
+  box-shadow: var(--box-shadow, 0 4px 15px rgba(0, 0, 0, 0.1));
+  overflow: hidden;
+  border: 1px solid #eef;
+  transition: all 0.3s ease-in-out;
+}
+
+.order-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Cabeçalho do card */
+.order-header {
+  background-color: #f8f9fa;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.order-header h3 {
+  margin: 0;
+  color: var(--primary-color, #6a11cb);
+  font-size: 1.25rem;
+}
+
+.order-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Corpo do card com a lista de produtos */
+.order-body {
+  padding: 1.5rem;
+}
+
+.order-body h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #343a40;
+  font-weight: 600;
+}
+
+.order-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.order-body li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f1f1;
+  font-size: 1rem;
+}
+
+.order-body li:last-child {
+  border-bottom: none;
+}
+
+.order-body li span:first-child {
+    font-weight: 500;
+}
+
+.order-body li span:last-child {
+    color: #555;
+    font-size: 0.9rem;
+}
