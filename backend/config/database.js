@@ -1,24 +1,14 @@
-const Sequelize = require('sequelize');
+const { Sequelize } = require('sequelize');
+require('dotenv').config(); 
 
-class Database {
-  constructor() {
-   this.init();
-    }
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: process.env.DB_HOST,
+    dialect: 'mysql',
+  }
+);
 
-    init() {
-        this.db = new Sequelize(
-            'FinalProject', // Nome do banco de dados
-            'root',         // Usuário do banco
-            '',             // Senha do banco (deixe em branco se não houver)
-            {
-                host: 'localhost',
-                dialect: 'mysql',
-                define: {
-                    timestamps: false, // Não cria colunas createdAt e updatedAt
-                },
-            }
-        );
-    }
-}
-
-module.exports = new Database();
+module.exports = sequelize;

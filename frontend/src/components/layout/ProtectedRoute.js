@@ -3,14 +3,15 @@ import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { auth } = useContext(AuthContext);
+  // Pega o estado de autenticação diretamente do contexto
+  const { isAuthenticated } = useContext(AuthContext);
 
-  if (!auth.token) {
-    // Redirect them to the /login page, but save the current location they were
-    // trying to go to.
+  // Se não estiver autenticado, redireciona para a página de login
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  // Se estiver autenticado, mostra a página solicitada
   return children;
 };
 

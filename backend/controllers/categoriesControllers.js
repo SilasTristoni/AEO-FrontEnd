@@ -1,87 +1,82 @@
-const Categories = require('../models/categories');
-const Products = require('../models/products'); // Adicionado para a associação
+const { Category, Product } = require('../models'); // Importe o Product também para a verificação
 
-class CategoriesControllers {
-    static async createCategory(req, res){
-        try{
-            const {name} = req.body;
+// Função auxiliar para evitar repetição de try-catch em rotas assíncronas.
+// Ela pega uma função, a executa, e se houver um erro, o passa para o `next()`.
+const asyncHandler = fn => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-            if(!name){
-                return res.status(400).json({message: 'Nome é obrigatório'});
-            }
+// --- CRUD OPERATIONS ---
 
-            const category = await Categories.create({
-                name
-            });
-            return res.status(201).json(category);
-        } catch(err){
-            return res.status(500).json({message: 'Erro ao criar categoria', error: err.message});
-        }
+// Criar uma nova categoria
+exports.createCategory = asyncHandler(async (req, res) => {
+    const { name } = req.body;
+    if (!name) {
+        res.status(400); // Bad Request
+        throw new Error('O nome da categoria é obrigatório.');
     }
-    static async updateCategory(req, res){
-        try{
-            const {id} = req.params;
-            const {name} = req.body;
-            const category = await Categories.findByPk(id);
-            if(!category){
-                return res.status(404).json({message: 'Categoria não encontrada'});
-            }
-            category.name = name;
-            await category.save();
-            return res.status(200).json(category);
-    } catch(err){
-            return res.status(500).json({message: 'Erro ao atualizar categoria', error: err.message});
-        }
+    const category = await Category.create({ name });
+    res.status(201).json(category);
+});
+
+// Obter todas as categorias
+exports.getAllCategories = asyncHandler(async (req, res) => {
+    const categories = await Category.findAll({
+        order: [['name', 'ASC']], // Ordena por nome
+    });
+    res.status(200).json(categories);
+});
+
+// Obter uma única categoria pelo ID
+exports.getCategoryById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const category = await Category.findByPk(id);
+    if (!category) {
+        res.status(404); // Not Found
+        throw new Error('Categoria não encontrada.');
     }
-    static async deleteCategory(req, res){
-        try{
-            const {id} = req.params;
-            const category = await Categories.findByPk(id);
-            if(!category){
-                return res.status(404).json({message: 'Categoria não encontrada'});
-            }
-            await category.destroy();
-            return res.status(204).send();
-        } catch(err){
-            return res.status(500).json({message: 'Erro ao deletar categoria', error: err.message});
-        }
+    res.status(200).json(category);
+});
+
+// Atualizar uma categoria
+exports.updateCategory = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    const category = await Category.findByPk(id);
+    if (!category) {
+        res.status(404);
+        throw new Error('Categoria não encontrada.');
     }
-    static async findAllCategories(req, res){
-        try{
-            const categories = await Categories.findAll();
-            return res.status(200).json(categories);
-        } catch(err){
-            return res.status(500).json({message: 'Erro ao buscar categorias', error: err.message});
-        }
+
+    if (!name) {
+        res.status(400);
+        throw new Error('O nome da categoria é obrigatório.');
     }
-    static async findCategoryById(req, res){
-        try{
-            const {id} = req.params;
-            const category = await Categories.findByPk(id);
-            if(!category){
-                return res.status(404).json({message: 'Categoria não encontrada'});
-            }
-            return res.status(200).json(category);
-        } catch(err){
-            return res.status(500).json({message: 'Erro ao buscar categoria', error: err.message});
-        }
+
+    category.name = name;
+    await category.save();
+
+    res.status(200).json(category);
+});
+
+// Excluir uma categoria
+exports.deleteCategory = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const category = await Category.findByPk(id);
+
+    if (!category) {
+        res.status(404);
+        throw new Error('Categoria não encontrada.');
     }
-    static async findProductsByCategoryId(req, res){
-        try{
-            const {id} = req.params;
-            const category = await Categories.findByPk(id, {
-                include: {
-                    model: Products, // Corrigido
-                    as: 'products'
-                }
-            });
-            if(!category){
-                return res.status(404).json({message: 'Categoria não encontrada'});
-            }
-            return res.status(200).json(category.products);
-        } catch(err){
-            return res.status(500).json({message: 'Erro ao buscar produtos da categoria', error: err.message});
-        }
+    
+    // VERIFICAÇÃO EXTRA: Não permitir excluir categoria se houver produtos associados a ela
+    const productsInCategory = await Product.count({ where: { categoryId: id } });
+    if (productsInCategory > 0) {
+        res.status(400);
+        throw new Error('Não é possível excluir a categoria, pois existem produtos associados a ela.');
     }
-}
-module.exports = CategoriesControllers;
+
+    await category.destroy();
+    res.status(200).json({ message: 'Categoria excluída com sucesso.' });
+});

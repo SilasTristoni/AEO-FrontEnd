@@ -1,19 +1,22 @@
 const { DataTypes } = require('sequelize');
-const database = require('../config/database');
-const User = require('./users');
+const database = require('../config/database'); // 'database' é a conexão direta
 
-const Order = database.db.define('Order', {
-    userId: {
+// CORREÇÃO: Usamos database.define() em vez de database.db.define()
+const Order = database.define('Order', {
+    id: {
         type: DataTypes.INTEGER,
+        autoIncrement: true,
         allowNull: false,
-        references: {
-            model: User,
-            key: 'id'
-        }
-    }
+        primaryKey: true,
+    },
+    orderDate: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW, // Define a data do pedido automaticamente
+        allowNull: false,
+    },
+    // Você pode adicionar outras colunas aqui, como status, total, etc.
+    // Ex: status: { type: DataTypes.STRING, defaultValue: 'Pending' }
+    // Ex: total: { type: DataTypes.DECIMAL(10, 2), allowNull: false }
 });
-
-User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
-Order.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 module.exports = Order;

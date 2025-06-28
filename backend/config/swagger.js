@@ -30,6 +30,6 @@ const options = {
 };
 
 const swaggerSpec = swaggerJsdoc(options);
-console.log(Json.stringify(swaggerSpec, null, 2)); // Log para verificar a estrutura do JSON
+console.log(JSON.stringify(swaggerSpec, null, 2)); // Log para verificar a estrutura do JSON
 
 module.exports = swaggerSpec;

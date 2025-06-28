@@ -1,54 +1,46 @@
+// 1. Importações de pacotes e configuração inicial
 const express = require('express');
-const cors = require('cors'); // Adicionado
+require('dotenv').config(); // Carrega as variáveis de ambiente do arquivo .env
+const cors = require('cors');
+
+// 2. Importação dos nossos módulos (rotas, db, error handler)
+const db = require('./models'); // <-- CORREÇÃO AQUI! Apenas './models'
+const userRoutes = require('./routes/usersRoutes');
+const categoryRoutes = require('./routes/categoriesRoutes');
+// const productRoutes = require('./routes/productRoutes'); // Descomente quando tiver as rotas de produtos
+const errorHandler = require('./middleware/errorHandler');
+
+// 3. Inicialização do Express
 const app = express();
-const database = require('./config/database.js');
 
-app.use(cors()); // Adicionado
-app.use(express.json());
+// 4. Configuração de Middlewares
+app.use(cors()); // Permite requisições de origens diferentes (do seu frontend)
+app.use(express.json()); // Permite que o express entenda JSON no corpo das requisições
+app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
+// 5. Definição das Rotas Principais
+app.use('/users', userRoutes);
+app.use('/categories', categoryRoutes);
+// app.use('/products', productRoutes); // Descomente quando tiver as rotas de produtos
 
-const productsRoutes = require('./routes/productsRoutes.js');
-const usersRoutes = require('./routes/usersRoutes.js');
-const categoriesRoutes = require('./routes/categoriesRoutes.js');
-const ordersRoutes = require('./routes/ordersRoutes.js');
-
-require('./models/associations'); // Garante que as associações sejam carregadas
-
-database.db.sync({ alter: true })
-  .then(() => {
-    console.log('Banco de dados conectado com sucesso!');
-  })
-  .catch((err) => {
-    console.error('Erro ao conectar ao banco de dados:', err.message);
-  });
-
+// Rota de "boas-vindas" para testar se o servidor está no ar
 app.get('/', (req, res) => {
-  res.send('API final do Jackson rodando! Docs disponíveis em /api-docs');
+    res.send('API da Loja AEO no ar!');
 });
 
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger.js');
+// 6. Middleware de Tratamento de Erros (deve ser o último)
+app.use(errorHandler);
 
-app.get('/swagger.json', (req, res) => {
-  res.json(swaggerSpec);
-});
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// 7. Sincronização com o Banco de Dados e Inicialização do Servidor
+const PORT = process.env.PORT || 3000;
 
-app.use('/products', productsRoutes);
-app.use('/users', usersRoutes);
-app.use('/categories', categoriesRoutes);
-app.use('/orders', ordersRoutes);
-
-app.use((req, res, next) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
-});
-
-
-const PORT = process.env.PORT || 3001; 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+db.sequelize.sync() // Sincroniza todos os modelos com o banco de dados
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Servidor rodando na porta ${PORT}`);
+            console.log('Conexão com o banco de dados estabelecida com sucesso.');
+        });
+    })
+    .catch(err => {
+        console.error('Não foi possível conectar ao banco de dados:', err);
+    });
