@@ -1,0 +1,24 @@
+const Orders = require('./orders');
+const Products = require('./products');
+const OrderProduct = require('./orderProduct');
+
+// Define a relação Muitos-para-Muitos entre Pedidos e Produtos
+Orders.belongsToMany(Products, {
+  through: OrderProduct,
+  foreignKey: 'orderId',
+  otherKey: 'productId',
+  as: 'products' // Adicionado um alias para facilitar as consultas
+});
+
+Products.belongsToMany(Orders, {
+  through: OrderProduct,
+  foreignKey: 'productId',
+  otherKey: 'orderId',
+  as: 'orders' // Adicionado um alias para facilitar as consultas
+});
+
+module.exports = {
+  Orders,
+  Products,
+  OrderProduct
+};
