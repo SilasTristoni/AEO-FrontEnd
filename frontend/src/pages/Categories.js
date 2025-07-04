@@ -1,50 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/api'; // Importa nossa instância do Axios configurada!
+import api from '../api/api';
 
 const Categories = () => {
     const [categories, setCategories] = useState([]);
     const [name, setName] = useState('');
-    const [editingCategory, setEditingCategory] = useState(null); // Guarda a categoria que está sendo editada
+    const [editingCategory, setEditingCategory] = useState(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Efeito para buscar as categorias do backend quando o componente carregar
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                // A requisição agora usa nossa instância 'api' e já envia o token
                 const response = await api.get('/categories');
                 setCategories(response.data);
-                setLoading(false);
             } catch (err) {
-                setError('Erro ao carregar as categorias. Faça o login novamente.');
+                setError('Erro ao carregar as categorias.');
                 console.error(err);
+            } finally {
                 setLoading(false);
             }
         };
-
         fetchCategories();
-    }, []); // O array vazio [] faz com que o useEffect rode apenas uma vez
+    }, []);
 
-    // Limpa o formulário e o estado de edição
     const resetForm = () => {
         setName('');
         setEditingCategory(null);
         setError('');
     };
 
-    // Prepara o formulário para editar uma categoria existente
     const handleEdit = (category) => {
         setEditingCategory(category);
         setName(category.name);
     };
 
-    // Deleta uma categoria
     const handleDelete = async (id) => {
         if (window.confirm('Tem certeza que deseja deletar esta categoria?')) {
             try {
                 await api.delete(`/categories/${id}`);
-                setCategories(categories.filter(cat => cat.id !== id)); // Remove da lista local
+                setCategories(categories.filter(cat => cat.id !== id));
             } catch (err) {
                 setError('Erro ao deletar a categoria.');
                 console.error(err);
@@ -52,70 +46,80 @@ const Categories = () => {
         }
     };
 
-    // Lida com o envio do formulário (criação ou atualização)
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
             setError("O nome da categoria é obrigatório.");
             return;
         }
-
         const categoryData = { name };
-
         try {
             if (editingCategory) {
-                // Se estiver editando, faz uma requisição PUT
                 const response = await api.put(`/categories/${editingCategory.id}`, categoryData);
                 setCategories(categories.map(cat => (cat.id === editingCategory.id ? response.data : cat)));
             } else {
-                // Se não, cria uma nova com uma requisição POST
                 const response = await api.post('/categories', categoryData);
                 setCategories([...categories, response.data]);
             }
-            resetForm(); // Limpa o formulário após o sucesso
+            resetForm();
         } catch (err) {
-            setError("Ocorreu um erro ao salvar a categoria. Verifique se o nome já existe.");
+            setError("Ocorreu um erro ao salvar a categoria.");
             console.error(err);
         }
     };
 
-    if (loading) {
-        return <p>Carregando categorias...</p>;
-    }
+    if (loading) return <p className="page-container">Carregando categorias...</p>;
 
     return (
-        <div className="categories-container">
-            <h2>Gerenciar Categorias</h2>
+        <div className="page-container">
+            <h1 className="page-header">Gerenciar Categorias</h1>
 
-            <form onSubmit={handleSubmit} className="category-form">
-                <h3>{editingCategory ? 'Editar Categoria' : 'Adicionar Nova Categoria'}</h3>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nome da categoria"
-                />
-                <button type="submit">{editingCategory ? 'Atualizar' : 'Adicionar'}</button>
-                {editingCategory && (
-                    <button type="button" onClick={resetForm} className="cancel-btn">
-                        Cancelar Edição
-                    </button>
-                )}
-                {error && <p className="error-message">{error}</p>}
-            </form>
+            {/* Formulário dentro de um card */}
+            <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <form onSubmit={handleSubmit}>
+                    <h3>{editingCategory ? 'Editar Categoria' : 'Adicionar Nova Categoria'}</h3>
+                    <div className="form-group">
+                        <label htmlFor="categoryName">Nome da categoria</label>
+                        <input
+                            type="text"
+                            id="categoryName"
+                            className="form-control" // <--- Classe para estilizar o input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Ex: Bebidas, Lanches, etc."
+                        />
+                    </div>
+                     {error && <p style={{ color: 'var(--color-danger)' }}>{error}</p>}
+                    <div className="btn-group">
+                        <button type="submit" className="btn btn-primary">
+                            {editingCategory ? 'Atualizar' : 'Adicionar'}
+                        </button>
+                        {editingCategory && (
+                            <button type="button" onClick={resetForm} className="btn btn-secondary">
+                                Cancelar
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
 
-            <h3>Categorias Existentes</h3>
-            <ul className="categories-list">
-                {categories.map((category) => (
-                    <li key={category.id}>
-                        <span>{category.name}</span>
-                        <div className="btn-group">
-                            <button onClick={() => handleEdit(category)}>Editar</button>
-                            <button onClick={() => handleDelete(category.id)} className="delete-btn">Deletar</button>
+            {/* Lista de categorias dentro de outro card */}
+            <div className="card">
+                 <h3>Categorias Existentes</h3>
+                {categories.length > 0 ? (
+                    categories.map((category) => (
+                        <div key={category.id} className="list-group-item"> {/* <--- Classe para cada item da lista */}
+                            <span>{category.name}</span>
+                            <div className="btn-group">
+                                <button onClick={() => handleEdit(category)} className="btn btn-secondary">Editar</button>
+                                <button onClick={() => handleDelete(category.id)} className="btn btn-danger">Deletar</button>
+                            </div>
                         </div>
-                    </li>
-                ))}
-            </ul>
+                    ))
+                ) : (
+                    <p>Nenhuma categoria encontrada.</p>
+                )}
+            </div>
         </div>
     );
 };

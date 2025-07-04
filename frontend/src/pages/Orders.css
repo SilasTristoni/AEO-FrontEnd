@@ -1,81 +1,287 @@
+/* ==========================================================================
+   1. Variáveis Globais (Root) e Reset
+   ========================================================================== */
+:root {
+  /* Cores */
+  --color-primary: #6e8efb;
+  --color-secondary: #a777e3;
+  --color-background: #f4f6f8;
+  --color-surface: #ffffff; /* Para cards, formulários, etc. */
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-border: #e0e0e0;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-white: #ffffff;
+
+  /* Tipografia */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  /* Espaçamento */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem;  /* 8px */
+  --spacing-md: 1rem;    /* 16px */
+  --spacing-lg: 1.5rem;  /* 24px */
+  --spacing-xl: 2.5rem;  /* 40px */
+
+  /* Outros */
+  --border-radius: 8px;
+  --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  --transition-base: all 0.2s ease-in-out;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   2. Layout Principal
+   ========================================================================== */
+.page-container {
+  max-width: 1200px;
+  margin: var(--spacing-lg) auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.page-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* ==========================================================================
+   3. Componentes Padronizados
+   ========================================================================== */
+
+/* --- Botões --- */
+.btn {
+  display: inline-block;
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition-base);
+  text-decoration: none;
+}
+
+.btn-primary {
+  color: var(--color-white);
+  background-image: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  border-color: var(--color-primary);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+  color: var(--color-white);
+  background-color: var(--color-text-secondary);
+  border-color: var(--color-text-secondary);
+}
+
+.btn-secondary:hover {
+   background-color: #555;
+}
+
+.btn-danger {
+  color: var(--color-white);
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-group {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* --- Formulários --- */
+.form-container {
+  background-color: var(--color-surface);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  width: 100%;
+}
+
+.form-container h2 {
+  margin-top: 0;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-primary);
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  transition: var(--transition-base);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.3);
+}
+
+/* --- Cards e Listas --- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: var(--spacing-lg);
+  transition: var(--transition-base);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.list-group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s;
+}
+
+.list-group-item:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.list-group-item:hover {
+  background-color: #f0f4ff;
+}
+
+/* ==========================================================================
+   4. Estilos Específicos de Página
+   ========================================================================== */
+
+/* --- Autenticação (Login / Register) --- */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+}
+
+.auth-container .form-container {
+    max-width: 420px;
+}
+
+.redirect-link {
+  margin-top: var(--spacing-lg);
+}
+
+.redirect-link a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.redirect-link a:hover {
+  text-decoration: underline;
+}
+
+/* --- Pedidos (Orders) --- */
 .orders-page {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-}
-
-.new-order-section, .past-orders-section {
-    background-color: #fff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.add-product-form {
-    margin-bottom: 1.5rem;
-}
-
-.add-product-form select {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #ddd;
+    gap: var(--spacing-xl);
 }
 
 .cart-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #eee;
-}
-
-.cart-item:last-child {
-    border-bottom: none;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .cart-item-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
 }
 
-.cart-item-actions input[type="number"] {
-    width: 50px;
-    padding: 0.3rem;
+.cart-item-actions input {
+    width: 60px;
     text-align: center;
 }
 
-.remove-btn {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-.place-order-btn {
-    width: 100%;
-    padding: 0.8rem;
-    margin-top: 1.5rem;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.order-card ul {
+.order-card-details {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
 
-.order-card li {
-    background-color: #f9f9f9;
-    padding: 0.5rem;
-    margin-bottom: 0.3rem;
-    border-radius: 4px;
+.order-card-details li {
+    padding: var(--spacing-xs);
+}
+
+/* ==========================================================================
+   5. Responsividade
+   ========================================================================== */
+@media (max-width: 992px) {
+    .orders-page {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 0 var(--spacing-md);
+    }
 }

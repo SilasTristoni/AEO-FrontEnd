@@ -2,36 +2,23 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/api';
 
 const Products = () => {
-    // States para a lista de produtos e categorias
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
-
-    // States para o formulário
-    const [name, setName] = useState('');
-    const [price, setPrice] = useState('');
-    const [categoryId, setCategoryId] = useState('');
-    
-    // State para controlar a edição
+    const [productData, setProductData] = useState({ name: '', price: '', categoryId: '' });
     const [editingProduct, setEditingProduct] = useState(null);
-
-    // States de controle da interface
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Função para buscar os dados iniciais (produtos e categorias)
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Faz as duas requisições em paralelo para carregar a página mais rápido
             const [productsResponse, categoriesResponse] = await Promise.all([
-                api.get('/products'), // Pega a lista de todos os produtos
-                api.get('/categories') // Pega a lista de todas as categorias para o dropdown
+                api.get('/products'),
+                api.get('/categories')
             ]);
-            
             setProducts(productsResponse.data);
             setCategories(categoriesResponse.data);
             setError('');
-
         } catch (err) {
             console.error("Erro ao buscar dados:", err);
             setError("Não foi possível carregar os dados. Tente novamente.");
@@ -40,105 +27,109 @@ const Products = () => {
         }
     };
 
-    // useEffect para chamar a função de busca de dados apenas uma vez
     useEffect(() => {
         fetchData();
     }, []);
 
-    // Limpa o formulário e reseta o modo de edição
     const resetForm = () => {
-        setName('');
-        setPrice('');
-        setCategoryId('');
+        setProductData({ name: '', price: '', categoryId: '' });
         setEditingProduct(null);
         setError('');
     };
 
-    // Prepara o formulário para editar um produto
-    const handleEdit = (product) => {
-        setEditingProduct(product);
-        setName(product.name);
-        setPrice(product.price);
-        setCategoryId(product.categoryId);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setProductData(prevState => ({ ...prevState, [name]: value }));
     };
 
-    // Deleta um produto
+    const handleEdit = (product) => {
+        setEditingProduct(product);
+        setProductData({
+            name: product.name,
+            price: product.price,
+            categoryId: product.categoryId,
+        });
+    };
+
     const handleDelete = async (id) => {
         if (window.confirm('Tem certeza que deseja deletar este produto?')) {
             try {
                 await api.delete(`/products/${id}`);
-                fetchData(); // Recarrega os dados da página
+                fetchData();
             } catch (err) {
                 setError("Erro ao deletar o produto.");
                 console.error(err);
             }
         }
     };
-
-    // Envia o formulário para criar ou atualizar um produto
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const { name, price, categoryId } = productData;
         if (!name || !price || !categoryId) {
             setError("Todos os campos são obrigatórios.");
             return;
         }
-        
-        // Garante que os tipos de dados estão corretos para a API
-        const productData = { name, price: parseFloat(price), categoryId: parseInt(categoryId) };
+        const dataToSend = { ...productData, price: parseFloat(price), categoryId: parseInt(categoryId) };
 
         try {
             if (editingProduct) {
-                await api.put(`/products/${editingProduct.id}`, productData);
+                await api.put(`/products/${editingProduct.id}`, dataToSend);
             } else {
-                await api.post('/products', productData);
+                await api.post('/products', dataToSend);
             }
             resetForm();
-            fetchData(); // Recarrega os dados da página
+            fetchData();
         } catch (err) {
             setError("Ocorreu um erro ao salvar o produto.");
             console.error(err);
         }
     };
 
-    if (loading) {
-        return <p>Carregando dados da página...</p>;
-    }
+    if (loading) return <p className="page-container">Carregando dados da página...</p>;
 
     return (
-        <div>
-            <h2>Gerenciar Produtos</h2>
+        <div className="page-container">
+            <h1 className="page-header">Gerenciar Produtos</h1>
 
-            <div className="form-container">
-                <h3>{editingProduct ? 'Editar Produto' : 'Criar Novo(a) Produto'}</h3>
+            <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
                 <form onSubmit={handleSubmit}>
-                    <input type="text" placeholder="Produto" value={name} onChange={(e) => setName(e.target.value)} required />
-                    <input type="number" placeholder="Preço" value={price} onChange={(e) => setPrice(e.target.value)} required step="0.01" />
-                    
-                    <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-                        <option value="" disabled>Selecione uma categoria</option>
-                        {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                            </option>
-                        ))}
-                    </select>
-
-                    <button type="submit">{editingProduct ? 'Atualizar' : 'Adicionar'}</button>
-                    {editingProduct && <button type="button" onClick={resetForm}>Cancelar</button>}
-                    {error && <p className="error">{error}</p>}
+                    <h3>{editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</h3>
+                    <div className="form-group">
+                        <label htmlFor="name">Nome do Produto</label>
+                        <input type="text" name="name" id="name" className="form-control" placeholder="Ex: Coca-Cola 2L" value={productData.name} onChange={handleInputChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="price">Preço (R$)</label>
+                        <input type="number" name="price" id="price" className="form-control" placeholder="Ex: 9.99" value={productData.price} onChange={handleInputChange} required step="0.01" />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="categoryId">Categoria</label>
+                        <select name="categoryId" id="categoryId" className="form-control" value={productData.categoryId} onChange={handleInputChange} required>
+                            <option value="" disabled>Selecione uma categoria</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {error && <p style={{ color: 'var(--color-danger)' }}>{error}</p>}
+                    <div className="btn-group">
+                        <button type="submit" className="btn btn-primary">{editingProduct ? 'Atualizar' : 'Adicionar'}</button>
+                        {editingProduct && <button type="button" onClick={resetForm} className="btn btn-secondary">Cancelar</button>}
+                    </div>
                 </form>
             </div>
 
-            <div className="item-list">
+            <h2>Produtos Existentes</h2>
+            <div className="card-grid"> {/* <--- Classe para a grade de produtos */}
                 {products.map(product => (
-                    <div key={product.id} className="item-card">
-                        <h4>{product.name}</h4>
+                    <div key={product.id} className="card"> {/* <--- Cada produto é um card */}
+                        <h4 style={{marginTop: 0}}>{product.name}</h4>
                         <p>Preço: R$ {product.price}</p>
-                        {/* ALTERAÇÃO APLICADA AQUI */}
-                        <p>Categoria: {product.category?.name || 'Sem categoria'}</p>
-                        <div>
-                            <button onClick={() => handleEdit(product)}>Editar</button>
-                            <button onClick={() => handleDelete(product.id)}>Deletar</button>
+                        <p>Categoria: {categories.find(c => c.id === product.categoryId)?.name || 'Sem categoria'}</p>
+                        <div className="btn-group">
+                            <button onClick={() => handleEdit(product)} className="btn btn-secondary">Editar</button>
+                            <button onClick={() => handleDelete(product.id)} className="btn btn-danger">Deletar</button>
                         </div>
                     </div>
                 ))}
