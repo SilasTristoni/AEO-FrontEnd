@@ -1,137 +1,150 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api/api';
-import { toast } from 'react-toastify';
-import EntityForm from '../components/ui/EntityForm'; // Importando nosso formulário genérico
 
-function Products() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]); // Precisamos das categorias para o select
+const Products = () => {
+    // States para a lista de produtos e categorias
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
 
-  // O estado agora é um objeto para ser compatível com o formulário
-  const [currentProduct, setCurrentProduct] = useState({
-    name: '',
-    price: '',
-    categoryId: '',
-  });
-
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Busca tanto os produtos quanto as categorias
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const productsResponse = await api.get('/products');
-      setProducts(productsResponse.data);
-
-      const categoriesResponse = await api.get('/categories');
-      setCategories(categoriesResponse.data);
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    // States para o formulário
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+    const [categoryId, setCategoryId] = useState('');
     
-    // Converte os valores para os tipos corretos antes de enviar
-    const productData = {
-      ...currentProduct,
-      price: parseFloat(currentProduct.price),
-      categoryId: parseInt(currentProduct.categoryId, 10),
+    // State para controlar a edição
+    const [editingProduct, setEditingProduct] = useState(null);
+
+    // States de controle da interface
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // Função para buscar os dados iniciais (produtos e categorias)
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            // Faz as duas requisições em paralelo para carregar a página mais rápido
+            const [productsResponse, categoriesResponse] = await Promise.all([
+                api.get('/products'), // Pega a lista de todos os produtos
+                api.get('/categories') // Pega a lista de todas as categorias para o dropdown
+            ]);
+            
+            setProducts(productsResponse.data);
+            setCategories(categoriesResponse.data);
+            setError('');
+
+        } catch (err) {
+            console.error("Erro ao buscar dados:", err);
+            setError("Não foi possível carregar os dados. Tente novamente.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (editingProductId) {
-      await api.put(`/products/${editingProductId}`, productData);
-      toast.success('Produto atualizado com sucesso!');
-    } else {
-      await api.post('/products', productData);
-      toast.success('Produto criado com sucesso!');
+    // useEffect para chamar a função de busca de dados apenas uma vez
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Limpa o formulário e reseta o modo de edição
+    const resetForm = () => {
+        setName('');
+        setPrice('');
+        setCategoryId('');
+        setEditingProduct(null);
+        setError('');
+    };
+
+    // Prepara o formulário para editar um produto
+    const handleEdit = (product) => {
+        setEditingProduct(product);
+        setName(product.name);
+        setPrice(product.price);
+        setCategoryId(product.categoryId);
+    };
+
+    // Deleta um produto
+    const handleDelete = async (id) => {
+        if (window.confirm('Tem certeza que deseja deletar este produto?')) {
+            try {
+                await api.delete(`/products/${id}`);
+                fetchData(); // Recarrega os dados da página
+            } catch (err) {
+                setError("Erro ao deletar o produto.");
+                console.error(err);
+            }
+        }
+    };
+
+    // Envia o formulário para criar ou atualizar um produto
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name || !price || !categoryId) {
+            setError("Todos os campos são obrigatórios.");
+            return;
+        }
+        
+        // Garante que os tipos de dados estão corretos para a API
+        const productData = { name, price: parseFloat(price), categoryId: parseInt(categoryId) };
+
+        try {
+            if (editingProduct) {
+                await api.put(`/products/${editingProduct.id}`, productData);
+            } else {
+                await api.post('/products', productData);
+            }
+            resetForm();
+            fetchData(); // Recarrega os dados da página
+        } catch (err) {
+            setError("Ocorreu um erro ao salvar o produto.");
+            console.error(err);
+        }
+    };
+
+    if (loading) {
+        return <p>Carregando dados da página...</p>;
     }
-    
-    handleCancelEdit();
-    fetchData();
-  };
-  
-  const handleEdit = (product) => {
-    setEditingProductId(product.id);
-    // Garante que os valores que vão para o formulário são strings
-    setCurrentProduct({
-        name: product.name,
-        price: String(product.price),
-        categoryId: String(product.categoryId),
-    });
-  };
 
-  const handleCancelEdit = () => {
-    setEditingProductId(null);
-    setCurrentProduct({ name: '', price: '', categoryId: '' });
-  };
+    return (
+        <div>
+            <h2>Gerenciar Produtos</h2>
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      await api.delete(`/products/${id}`);
-      toast.success('Produto excluído com sucesso!');
-      fetchData();
-    }
-  };
+            <div className="form-container">
+                <h3>{editingProduct ? 'Editar Produto' : 'Criar Novo(a) Produto'}</h3>
+                <form onSubmit={handleSubmit}>
+                    <input type="text" placeholder="Produto" value={name} onChange={(e) => setName(e.target.value)} required />
+                    <input type="number" placeholder="Preço" value={price} onChange={(e) => setPrice(e.target.value)} required step="0.01" />
+                    
+                    <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+                        <option value="" disabled>Selecione uma categoria</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
 
-  if (loading) {
-    return <div>Carregando...</div>;
-  }
-  
-  // Definimos os campos para o formulário de Produtos
-  // Incluindo um campo do tipo 'select' para as categorias!
-  const productFields = [
-    { name: 'name', label: 'Produto', type: 'text' },
-    { name: 'price', label: 'Preço', type: 'number' },
-    { 
-      name: 'categoryId', 
-      label: 'Categoria', 
-      type: 'select', 
-      options: categories.map(cat => ({ value: cat.id, label: cat.name }))
-    }
-  ];
-
-  return (
-    <div className="page-container">
-      <h1>Gerenciar Produtos</h1>
-
-      <EntityForm
-        entity={currentProduct}
-        setEntity={setCurrentProduct}
-        fields={productFields}
-        onSubmit={handleSubmit}
-        isEditing={!!editingProductId}
-        onCancelEdit={handleCancelEdit}
-        submitButtonText={editingProductId ? 'Atualizar Produto' : 'Criar Produto'}
-      />
-
-      <div className="entity-list">
-        <h2>Produtos Existentes</h2>
-        <div className="item-list">
-            {products.map(product => (
-            <div key={product.id} className="item-card">
-                <h4>{product.name}</h4>
-                <p>Preço: R$ {product.price}</p>
-                {/* Mostra o nome da categoria em vez do ID */}
-                <p>Categoria: {categories.find(c => c.id === product.categoryId)?.name || 'N/A'}</p>
-                <div className="actions">
-                <button onClick={() => handleEdit(product)}>Editar</button>
-                <button onClick={() => handleDelete(product.id)} className="delete-button">Excluir</button>
-                </div>
+                    <button type="submit">{editingProduct ? 'Atualizar' : 'Adicionar'}</button>
+                    {editingProduct && <button type="button" onClick={resetForm}>Cancelar</button>}
+                    {error && <p className="error">{error}</p>}
+                </form>
             </div>
-            ))}
+
+            <div className="item-list">
+                {products.map(product => (
+                    <div key={product.id} className="item-card">
+                        <h4>{product.name}</h4>
+                        <p>Preço: R$ {product.price}</p>
+                        {/* ALTERAÇÃO APLICADA AQUI */}
+                        <p>Categoria: {product.category?.name || 'Sem categoria'}</p>
+                        <div>
+                            <button onClick={() => handleEdit(product)}>Editar</button>
+                            <button onClick={() => handleDelete(product.id)}>Deletar</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
-      </div>
-    </div>
-  );
-}
+    );
+};
 
 export default Products;

@@ -1,22 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const {
-    createCategory,
-    getAllCategories,
-    getCategoryById,
-    updateCategory,
-    deleteCategory
-} = require('../controllers/categoriesControllers');
-const authMiddleware = require('../middleware/authenticateToken'); 
-router.use(authMiddleware);
+const CategoriesControllers = require('../controllers/categoriesControllers');
+const authenticateToken = require('../middleware/authenticateToken.js');
 
-router.route('/')
-    .get(getAllCategories)
-    .post(createCategory);
+// Rotas para Categorias
+router.get('/', authenticateToken, CategoriesControllers.findAllCategories);
+router.post('/', authenticateToken, CategoriesControllers.createCategory);
+router.get('/:id', authenticateToken, CategoriesControllers.findCategoryById);
+router.put('/:id', authenticateToken, CategoriesControllers.updateCategory);
+router.delete('/:id', authenticateToken, CategoriesControllers.deleteCategory);
 
-router.route('/:id')
-    .get(getCategoryById)
-    .put(updateCategory)
-    .delete(deleteCategory);
+// Rota para buscar produtos de uma categoria específica
+router.get('/:id/products', authenticateToken, CategoriesControllers.findProductsByCategoryId);
 
 module.exports = router;

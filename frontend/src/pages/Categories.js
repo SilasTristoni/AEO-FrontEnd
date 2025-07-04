@@ -1,107 +1,123 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import api from '../api/api';
-import { toast } from 'react-toastify';
-import EntityForm from '../components/ui/EntityForm'; // <-- 1. Importamos o novo componente
+import React, { useState, useEffect } from 'react';
+import api from '../api/api'; // Importa nossa instância do Axios configurada!
 
-function Categories() {
-  const [categories, setCategories] = useState([]);
-  
-  // 2. O estado agora é um objeto, para ser compatível com o formulário genérico
-  const [currentCategory, setCurrentCategory] = useState({ name: '' });
-  
-  const [editingCategoryId, setEditingCategoryId] = useState(null);
-  const [loading, setLoading] = useState(true);
+const Categories = () => {
+    const [categories, setCategories] = useState([]);
+    const [name, setName] = useState('');
+    const [editingCategory, setEditingCategory] = useState(null); // Guarda a categoria que está sendo editada
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/categories');
-      setCategories(response.data);
-    } catch (error) {
-      // O interceptor já mostra o toast, mas podemos logar para debug
-      console.error("Erro ao buscar categorias:", error);
-    } finally {
-      setLoading(false);
+    // Efeito para buscar as categorias do backend quando o componente carregar
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                // A requisição agora usa nossa instância 'api' e já envia o token
+                const response = await api.get('/categories');
+                setCategories(response.data);
+                setLoading(false);
+            } catch (err) {
+                setError('Erro ao carregar as categorias. Faça o login novamente.');
+                console.error(err);
+                setLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []); // O array vazio [] faz com que o useEffect rode apenas uma vez
+
+    // Limpa o formulário e o estado de edição
+    const resetForm = () => {
+        setName('');
+        setEditingCategory(null);
+        setError('');
+    };
+
+    // Prepara o formulário para editar uma categoria existente
+    const handleEdit = (category) => {
+        setEditingCategory(category);
+        setName(category.name);
+    };
+
+    // Deleta uma categoria
+    const handleDelete = async (id) => {
+        if (window.confirm('Tem certeza que deseja deletar esta categoria?')) {
+            try {
+                await api.delete(`/categories/${id}`);
+                setCategories(categories.filter(cat => cat.id !== id)); // Remove da lista local
+            } catch (err) {
+                setError('Erro ao deletar a categoria.');
+                console.error(err);
+            }
+        }
+    };
+
+    // Lida com o envio do formulário (criação ou atualização)
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) {
+            setError("O nome da categoria é obrigatório.");
+            return;
+        }
+
+        const categoryData = { name };
+
+        try {
+            if (editingCategory) {
+                // Se estiver editando, faz uma requisição PUT
+                const response = await api.put(`/categories/${editingCategory.id}`, categoryData);
+                setCategories(categories.map(cat => (cat.id === editingCategory.id ? response.data : cat)));
+            } else {
+                // Se não, cria uma nova com uma requisição POST
+                const response = await api.post('/categories', categoryData);
+                setCategories([...categories, response.data]);
+            }
+            resetForm(); // Limpa o formulário após o sucesso
+        } catch (err) {
+            setError("Ocorreu um erro ao salvar a categoria. Verifique se o nome já existe.");
+            console.error(err);
+        }
+    };
+
+    if (loading) {
+        return <p>Carregando categorias...</p>;
     }
-  }, []);
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    return (
+        <div className="categories-container">
+            <h2>Gerenciar Categorias</h2>
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (editingCategoryId) { // Se está editando
-      await api.put(`/categories/${editingCategoryId}`, currentCategory);
-      toast.success('Categoria atualizada com sucesso!');
-    } else { // Se está criando
-      await api.post('/categories', currentCategory);
-      toast.success('Categoria criada com sucesso!');
-    }
-    
-    handleCancelEdit(); // Limpa o formulário e reseta o estado
-    fetchCategories();   // Recarrega a lista
-  };
+            <form onSubmit={handleSubmit} className="category-form">
+                <h3>{editingCategory ? 'Editar Categoria' : 'Adicionar Nova Categoria'}</h3>
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nome da categoria"
+                />
+                <button type="submit">{editingCategory ? 'Atualizar' : 'Adicionar'}</button>
+                {editingCategory && (
+                    <button type="button" onClick={resetForm} className="cancel-btn">
+                        Cancelar Edição
+                    </button>
+                )}
+                {error && <p className="error-message">{error}</p>}
+            </form>
 
-  const handleEdit = (category) => {
-    setEditingCategoryId(category.id);
-    setCurrentCategory({ name: category.name }); // Preenche o formulário com os dados
-  };
-  
-  const handleCancelEdit = () => {
-      setEditingCategoryId(null);
-      setCurrentCategory({ name: '' }); // Limpa o formulário
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta categoria? Isso não pode ser desfeito.')) {
-      await api.delete(`/categories/${id}`);
-      toast.success('Categoria excluída com sucesso!');
-      fetchCategories();
-    }
-  };
-
-  if (loading) {
-    return <div>Carregando categorias...</div>;
-  }
-
-  // 3. Definimos os campos que o nosso formulário de categoria terá
-  const categoryFields = [
-    { name: 'name', label: 'Categoria', type: 'text' }
-  ];
-
-  return (
-    <div className="page-container">
-      <h1>Gerenciar Categorias</h1>
-
-      {/* 4. Usamos o EntityForm aqui! */}
-      <EntityForm
-        entity={currentCategory}
-        setEntity={setCurrentCategory}
-        fields={categoryFields}
-        onSubmit={handleSubmit}
-        isEditing={!!editingCategoryId}
-        onCancelEdit={handleCancelEdit}
-        submitButtonText={editingCategoryId ? 'Atualizar Categoria' : 'Criar Categoria'}
-      />
-
-      <div className="entity-list">
-        <h2>Categorias Existentes</h2>
-        <ul>
-          {categories.map((category) => (
-            <li key={category.id}>
-              <span>{category.name}</span>
-              <div className="actions">
-                <button onClick={() => handleEdit(category)}>Editar</button>
-                <button onClick={() => handleDelete(category.id)} className="delete-button">Excluir</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
+            <h3>Categorias Existentes</h3>
+            <ul className="categories-list">
+                {categories.map((category) => (
+                    <li key={category.id}>
+                        <span>{category.name}</span>
+                        <div className="btn-group">
+                            <button onClick={() => handleEdit(category)}>Editar</button>
+                            <button onClick={() => handleDelete(category.id)} className="delete-btn">Deletar</button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
 
 export default Categories;

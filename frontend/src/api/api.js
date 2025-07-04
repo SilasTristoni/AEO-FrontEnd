@@ -6,11 +6,12 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Pega o token do localStorage
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
+    return config; 
   },
   (error) => {
     return Promise.reject(error);

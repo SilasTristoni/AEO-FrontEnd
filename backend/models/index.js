@@ -1,46 +1,26 @@
-'use strict';
-
-const sequelize = require('../config/database');
-
-// 1. Importar todos os modelos
 const User = require('./users');
 const Category = require('./categories');
 const Product = require('./products');
 const Order = require('./orders');
 const OrderProduct = require('./orderProduct');
 
-// 2. Montar o objeto 'db'
-const db = {
-  sequelize,
+// Relação Categoria -> Produto
+Category.hasMany(Product, { as: 'products', foreignKey: 'categoryId' });
+Product.belongsTo(Category, { as: 'category', foreignKey: 'categoryId' });
+
+// Relação Usuário -> Pedido
+User.hasMany(Order, { as: 'orders', foreignKey: 'userId' });
+Order.belongsTo(User, { as: 'user', foreignKey: 'userId' });
+
+// Relação Pedido <-> Produto
+Order.belongsToMany(Product, { through: OrderProduct, foreignKey: 'orderId', as: 'products' });
+Product.belongsToMany(Order, { through: OrderProduct, foreignKey: 'productId', as: 'orders' });
+
+// Exporta tudo para ser usado no resto da aplicação
+module.exports = {
   User,
   Category,
   Product,
   Order,
-  OrderProduct
+  OrderProduct,
 };
-
-// 3. Definir TODAS as associações
-// Associação: Categoria <-> Produto
-db.Category.hasMany(db.Product, { foreignKey: 'categoryId', as: 'products' });
-db.Product.belongsTo(db.Category, { foreignKey: 'categoryId', as: 'category' });
-
-// Associação: Pedido <-> Produto
-db.Order.belongsToMany(db.Product, {
-  through: db.OrderProduct,
-  foreignKey: 'orderId',
-  otherKey: 'productId',
-  as: 'products'
-});
-db.Product.belongsToMany(db.Order, {
-  through: db.OrderProduct,
-  foreignKey: 'productId',
-  otherKey: 'orderId',
-  as: 'orders'
-});
-
-// Associação: Usuário <-> Pedido
-db.User.hasMany(db.Order, { foreignKey: 'userId', as: 'orders' });
-db.Order.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
-
-// 4. Exportar o objeto 'db' corretamente
-module.exports = db; // <-- CORREÇÃO AQUI

@@ -2,25 +2,13 @@ const { DataTypes } = require('sequelize');
 const database = require('../config/database');
 
 const Product = database.define('Product', {
-    id: {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    name: { type: DataTypes.STRING, allowNull: false },
+    price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    categoryId: { // A definição da chave estrangeira é ESSENCIAL aqui
         type: DataTypes.INTEGER,
-        autoIncrement: true,
-        allowNull: false,
-        primaryKey: true,
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-    },
-    price: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-    },
-    // O campo 'categoryId' será adicionado pela associação no arquivo 'models/index.js'
+        allowNull: true // Permite nulo para produtos sem categoria
+    }
 });
 
 module.exports = Product;
