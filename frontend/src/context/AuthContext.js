@@ -1,16 +1,13 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode'; // Você já instalou, mas confirme
+import { jwtDecode } from 'jwt-decode';
 import api from '../api/api';
 
-// Criação do Contexto
 export const AuthContext = createContext(null);
 
-// Provedor do Contexto
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState({ token: null, user: null, isAuthenticated: false });
   const [loading, setLoading] = useState(true);
 
-  // Função de login: recebe o token, salva, e atualiza o estado
   const login = useCallback((token) => {
     try {
       localStorage.setItem('token', token);
@@ -23,27 +20,24 @@ export const AuthProvider = ({ children }) => {
       });
     } catch (error) {
       console.error("Erro ao decodificar o token", error);
-      logout(); // Se o token for inválido, desloga
+      logout();
     }
   }, []);
 
-  // Função de logout: limpa tudo
   const logout = () => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
     setAuth({ token: null, user: null, isAuthenticated: false });
   };
 
-  // Efeito para verificar o token ao carregar a aplicação
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      login(token); // Reutiliza a função de login para validar e setar o estado
+      login(token);
     }
     setLoading(false);
   }, [login]);
 
-  // Não renderiza nada enquanto verifica o token
   if (loading) {
     return <div>Carregando Aplicação...</div>;
   }
